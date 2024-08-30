@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Odszyfrowywanie AES</title>
+    <title>Secret message</title>
     <style>
         body {
             margin: 0;
@@ -56,11 +56,11 @@
 </head>
 <body>
     <div class="container">
-        <h2>Odszyfrowywanie AES</h2>
-        <p>Szyfrogram (Base64 URL-safe) został załadowany z linku. Wprowadź hasło do odszyfrowania:</p>
+        <h2>Enter password</h2>
+        <p>Enter decryption password:</p>
         <input type="password" id="decryptPassword" placeholder="Hasło">
-        <button onclick="decryptMessage()">Odszyfruj</button>
-        <p><strong>Odszyfrowana wiadomość:</strong></p>
+        <button onclick="decryptMessage()">Decrypt</button>
+        <p><strong>Decrypted message:</strong></p>
         <p id="decryptedResult"></p>
     </div>
 
@@ -92,10 +92,10 @@
                     // Wyświetlenie odszyfrowanej wiadomości
                     document.getElementById("decryptedResult").textContent = plainText;
                 } catch (error) {
-                    document.getElementById("decryptedResult").textContent = "Błąd przy odszyfrowywaniu: " + error.message;
+                    document.getElementById("decryptedResult").textContent = "Error " + error.message;
                 }
             } else {
-                document.getElementById("decryptedResult").textContent = "Proszę podać hasło.";
+                document.getElementById("decryptedResult").textContent = "Enter password.";
             }
         }
 
@@ -132,7 +132,7 @@
             if (ciphertext) {
                 document.getElementById('decryptPassword').focus();
             } else {
-                document.getElementById('decryptedResult').textContent = "Brak szyfrogramu w URL.";
+                document.getElementById('decryptedResult').textContent = "No ciphertext passed";
             }
         };
     </script>
