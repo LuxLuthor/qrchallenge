@@ -3,32 +3,115 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AES Encryption</title>
+    <title>Generowanie AES Szyfrogramu</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: black;
+            color: #0F0;
+            font-family: 'Courier New', Courier, monospace;
+        }
+
+        .container {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            padding: 20px;
+            border: 2px solid #0F0;
+            border-radius: 10px;
+            background: rgba(0, 0, 0, 0.8);
+        }
+
+        h2 {
+            margin-bottom: 20px;
+        }
+
+        textarea,
+        input,
+        button {
+            padding: 10px;
+            margin: 5px;
+            border: 1px solid #0F0;
+            border-radius: 5px;
+            background: black;
+            color: #0F0;
+            font-size: 16px;
+        }
+
+        button {
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #0F0;
+            color: black;
+        }
+
+        p {
+            margin: 10px 0;
+        }
+
+        #ciphertextLink {
+            display: block;
+            margin-top: 20px;
+            word-wrap: break-word;
+        }
+    </style>
 </head>
 <body>
-    <h2>Szyfrowanie AES</h2>
-    <p>Wprowadź tekst, który chcesz zaszyfrować oraz hasło:</p>
-    <textarea id="plaintext" rows="4" cols="50" placeholder="Wprowadź tekst..."></textarea><br><br>
-    <input type="password" id="password" placeholder="Hasło">
-    <button onclick="encryptMessage()">Zaszyfruj</button>
-    <p id="result"></p>
+    <div class="container">
+        <h2>Generowanie AES Szyfrogramu</h2>
+        <p>Wprowadź tekst do zaszyfrowania oraz hasło:</p>
+        <textarea id="plaintext" rows="4" cols="50" placeholder="Wprowadź tekst..."></textarea><br><br>
+        <input type="password" id="password" placeholder="Hasło">
+        <button onclick="encryptMessage()">Zaszyfruj</button>
+        <p><strong>Link z szyfrogramem:</strong></p>
+        <a id="ciphertextLink" href="#" target="_blank">Kliknij tutaj, aby skopiować link</a>
+        <p id="result"></p>
+    </div>
 
     <script src="https://cdn.jsdelivr.net/npm/crypto-js@4.1.1/crypto-js.js"></script>
     <script>
+        // Funkcja do kodowania Base64 URL-safe
+        function base64UrlEncode(base64) {
+            return base64
+                .replace(/\+/g, '-')   // Zamień '+' na '-'
+                .replace(/\//g, '_')   // Zamień '/' na '_'
+                .replace(/=+$/, '');   // Usuń wypełnienia '='
+        }
+
+        // Funkcja do szyfrowania i generowania linku
         function encryptMessage() {
             const plaintext = document.getElementById("plaintext").value;
             const password = document.getElementById("password").value;
 
             if (plaintext && password) {
                 try {
-                    const encrypted = CryptoJS.AES.encrypt(plaintext, CryptoJS.enc.Utf8.parse(password), {
+                    // Generowanie klucza o długości 256 bitów z hasła
+                    const key = CryptoJS.SHA256(password).toString(CryptoJS.enc.Hex).slice(0, 32);
+                    const keyHex = CryptoJS.enc.Hex.parse(key);
+
+                    // Szyfrowanie tekstu
+                    const encrypted = CryptoJS.AES.encrypt(plaintext, keyHex, {
                         mode: CryptoJS.mode.ECB,
                         padding: CryptoJS.pad.Pkcs7
                     });
 
+                    // Konwersja szyfrogramu na Base64 URL-safe
                     const cipherTextBase64 = encrypted.ciphertext.toString(CryptoJS.enc.Base64);
+                    const cipherTextBase64Url = base64UrlEncode(cipherTextBase64);
 
-                    document.getElementById("result").textContent = "Zaszyfrowany tekst (Base64): " + cipherTextBase64;
+                    // Generowanie linku z szyfrogramem jako parametr
+                    const baseUrl = window.location.origin;
+                    const link = `${baseUrl}/decrypt.html?ciphertext=${encodeURIComponent(cipherTextBase64Url)}`;
+                    
+                    // Wyświetlanie linku
+                    document.getElementById("ciphertextLink").href = link;
+                    document.getElementById("ciphertextLink").textContent = link;
+                    document.getElementById("result").textContent = "Tekst został zaszyfrowany i link został wygenerowany.";
                 } catch (error) {
                     document.getElementById("result").textContent = "Błąd przy szyfrowaniu: " + error.message;
                 }

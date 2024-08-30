@@ -3,56 +3,138 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AES Decryption</title>
+    <title>Odszyfrowywanie AES</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: black;
+            color: #0F0;
+            font-family: 'Courier New', Courier, monospace;
+        }
+
+        .container {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            padding: 20px;
+            border: 2px solid #0F0;
+            border-radius: 10px;
+            background: rgba(0, 0, 0, 0.8);
+        }
+
+        h2 {
+            margin-bottom: 20px;
+        }
+
+        input[type="password"],
+        button {
+            padding: 10px;
+            margin: 5px;
+            border: 1px solid #0F0;
+            border-radius: 5px;
+            background: black;
+            color: #0F0;
+            font-size: 16px;
+        }
+
+        button {
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #0F0;
+            color: black;
+        }
+
+        p {
+            margin: 10px 0;
+        }
+    </style>
 </head>
 <body>
-    <h2>Odszyfrowanie AES</h2>
-    <p>Wprowadź hasło, aby odszyfrować wiadomość:</p>
-    <input type="password" id="password" placeholder="Hasło">
-    <button onclick="decryptMessage()">Odszyfruj</button>
-    <p id="result"></p>
+    <div class="container">
+        <h2>Odszyfrowywanie AES</h2>
+        <p>Szyfrogram (Base64 URL-safe) został załadowany z linku. Wprowadź hasło do odszyfrowania:</p>
+        <input type="password" id="decryptPassword" placeholder="Hasło">
+        <button onclick="decryptMessage()">Odszyfruj</button>
+        <p><strong>Odszyfrowana wiadomość:</strong></p>
+        <p id="decryptedResult"></p>
+    </div>
 
     <script src="https://cdn.jsdelivr.net/npm/crypto-js@4.1.1/crypto-js.js"></script>
     <script>
-        function getParameterByName(name) {
-            const url = window.location.href;
-            name = name.replace(/[\[\]]/g, '\\$&');
-            const regex = new RegExp('[?&]' + name + '(=([^&#]*)|&|#|$)');
-            const results = regex.exec(url);
-            if (!results) return null;
-            if (!results[2]) return '';
-            return decodeURIComponent(results[2].replace(/\+/g, ' '));
-        }
-
+        // Funkcja do odszyfrowania
         function decryptMessage() {
-            const password = document.getElementById("password").value;
-            const cipherTextBase64 = getParameterByName('cipher');
+            const cipherTextBase64Url = getQueryParam('ciphertext');
+            const password = document.getElementById("decryptPassword").value;
 
-            if (cipherTextBase64 && password) {
+            if (cipherTextBase64Url && password) {
                 try {
-                    const cipherParams = CryptoJS.lib.CipherParams.create({
-                        ciphertext: CryptoJS.enc.Base64.parse(cipherTextBase64)
-                    });
+                    // Generowanie klucza o długości 256 bitów z hasła
+                    const key = CryptoJS.SHA256(password).toString(CryptoJS.enc.Hex).slice(0, 32);
+                    const keyHex = CryptoJS.enc.Hex.parse(key);
 
-                    const decrypted = CryptoJS.AES.decrypt(cipherParams, CryptoJS.enc.Utf8.parse(password), {
+                    // Dekodowanie Base64 URL-safe na format binarny
+                    const base64 = base64UrlDecode(cipherTextBase64Url);
+                    const encrypted = CryptoJS.enc.Base64.parse(base64);
+
+                    // Odszyfrowanie tekstu
+                    const decrypted = CryptoJS.AES.decrypt({ ciphertext: encrypted }, keyHex, {
                         mode: CryptoJS.mode.ECB,
                         padding: CryptoJS.pad.Pkcs7
                     });
 
                     const plainText = decrypted.toString(CryptoJS.enc.Utf8);
 
-                    if (plainText) {
-                        document.getElementById("result").textContent = "Odszyfrowana wiadomość: " + plainText;
-                    } else {
-                        document.getElementById("result").textContent = "Nie udało się odszyfrować wiadomości. Sprawdź hasło.";
-                    }
+                    // Wyświetlenie odszyfrowanej wiadomości
+                    document.getElementById("decryptedResult").textContent = plainText;
                 } catch (error) {
-                    document.getElementById("result").textContent = "Błąd przy odszyfrowywaniu: " + error.message;
+                    document.getElementById("decryptedResult").textContent = "Błąd przy odszyfrowywaniu: " + error.message;
                 }
             } else {
-                document.getElementById("result").textContent = "Proszę podać hasło i upewnić się, że szyfrogram jest dostępny w parametrze URL.";
+                document.getElementById("decryptedResult").textContent = "Proszę podać hasło.";
             }
         }
+
+        // Funkcja do pobrania parametrów z URL
+        function getQueryParam(param) {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(param);
+        }
+
+        // Funkcja do kodowania Base64 URL-safe
+        function base64UrlEncode(base64) {
+            return base64
+                .replace(/\+/g, '-')   // Zamień '+' na '-'
+                .replace(/\//g, '_')   // Zamień '/' na '_'
+                .replace(/=+$/, '');   // Usuń wypełnienia '='
+        }
+
+        // Funkcja do dekodowania Base64 URL-safe
+        function base64UrlDecode(base64Url) {
+            let base64 = base64Url
+                .replace(/-/g, '+')   // Zamień '-' na '+'
+                .replace(/_/g, '/');   // Zamień '_' na '/'
+            // Uzupełnij '=' w razie potrzeby
+            const padding = base64.length % 4;
+            if (padding) {
+                base64 += '='.repeat(4 - padding);
+            }
+            return base64;
+        }
+
+        // Przy ładowaniu strony, odczytaj parametr 'ciphertext' z URL
+        window.onload = function() {
+            const ciphertext = getQueryParam('ciphertext');
+            if (ciphertext) {
+                document.getElementById('decryptPassword').focus();
+            } else {
+                document.getElementById('decryptedResult').textContent = "Brak szyfrogramu w URL.";
+            }
+        };
     </script>
 </body>
 </html>
