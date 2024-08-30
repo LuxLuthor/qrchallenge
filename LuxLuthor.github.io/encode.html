@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AES Encryption</title>
+</head>
+<body>
+    <h2>Szyfrowanie AES</h2>
+    <p>Wprowadź tekst, który chcesz zaszyfrować oraz hasło:</p>
+    <textarea id="plaintext" rows="4" cols="50" placeholder="Wprowadź tekst..."></textarea><br><br>
+    <input type="password" id="password" placeholder="Hasło">
+    <button onclick="encryptMessage()">Zaszyfruj</button>
+    <p id="result"></p>
+
+    <script src="https://cdn.jsdelivr.net/npm/crypto-js@4.1.1/crypto-js.js"></script>
+    <script>
+        function encryptMessage() {
+            const plaintext = document.getElementById("plaintext").value;
+            const password = document.getElementById("password").value;
+
+            if (plaintext && password) {
+                try {
+                    const encrypted = CryptoJS.AES.encrypt(plaintext, CryptoJS.enc.Utf8.parse(password), {
+                        mode: CryptoJS.mode.ECB,
+                        padding: CryptoJS.pad.Pkcs7
+                    });
+
+                    const cipherTextBase64 = encrypted.ciphertext.toString(CryptoJS.enc.Base64);
+
+                    document.getElementById("result").textContent = "Zaszyfrowany tekst (Base64): " + cipherTextBase64;
+                } catch (error) {
+                    document.getElementById("result").textContent = "Błąd przy szyfrowaniu: " + error.message;
+                }
+            } else {
+                document.getElementById("result").textContent = "Proszę wprowadzić tekst do zaszyfrowania oraz hasło.";
+            }
+        }
+    </script>
+</body>
+</html>
